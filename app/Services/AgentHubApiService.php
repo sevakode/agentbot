@@ -14,10 +14,40 @@ class AgentHubApiService
 
     public function getUsers($page = 1, $limit = 10)
     {
-        return $this->makeApiRequest('get', 'users', [
+        return $this->makeApiRequest('get', 'users/', [
             'page' => $page,
             'per_page' => $limit
         ]);
+    }
+
+    public function createUser(
+        string $username,
+        string $password,
+        string $name,
+        string $surname,
+        string $email,
+        bool $isAdmin = false,
+        string|null $avatar = null,
+        string|null $description = null,
+        bool $isOperator = false,
+    )
+    {
+        return $this->makeApiRequest('post', 'users/', [
+            'username' => $username,
+            'password' => $password,
+            'name' => $name,
+            'surname' => $surname,
+            'email' => $email,
+            'is_admin' => $isAdmin,
+            'avatar' => $avatar,
+            'description' => $description,
+            'is_operator' => $isOperator,
+        ]);
+    }
+
+    public function deleteUser(string $id)
+    {
+        return $this->makeApiRequest('delete', "users/{$id}",);
     }
     
     public function authenticateAndCacheToken($username, $password)
@@ -51,14 +81,20 @@ class AgentHubApiService
         );
     }
 
-    public function makeApiRequest($method, $endpoint, $data, $username = null, $password = null)
+    public function makeApiRequest(
+        string $method, 
+        string $endpoint, 
+        array $data = [], 
+        string $username = null, 
+        string $password = null
+    )
     {
         $username = $username ?: $this->username;
         $password = $password ?: $this->password;
         // Попытаться выполнить запрос с существующим токеном
         $token = $this->getToken($username, $password);
 
-        $response = Http::withToken($token)->$method("/{$this->baseUrl}/{$endpoint}/", $data);
+        $response = Http::withToken($token)->$method("/{$this->baseUrl}/{$endpoint}", $data);
 
         // Если токен истек, попытаться его обновить и повторить запрос
         if ($response->status() === 401) {
@@ -69,12 +105,7 @@ class AgentHubApiService
             $response = Http::withToken($token)->$method("{$this->baseUrl}{$endpoint}", $data);
         }
 
-        if ($response->successful()) {
-            return $response->collect();
-        } else {
-            // Обработка других ошибок
-            throw new \Exception("API request failed: " . $response->body());
-        }        
+        return $response;    
     }
 
     public function registerUser($userData)
