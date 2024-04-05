@@ -12,8 +12,10 @@ class AgentHubServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->bind('AgentHubApiService', function ($app) {
-            return new AgentHubApiService();
+        $this->app->bind(AgentHubApiService::class, function ($app) {
+            $log = config('services.agenthub.login');
+            $pass = config('services.agenthub.password');
+            return new AgentHubApiService($log, $pass);
         });
         }
 

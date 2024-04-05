@@ -31,4 +31,8 @@ return [
         ],
     ],
 
+    'agenthub' => [
+        'login' => env('AGENTHUB_LOGIN'),
+        'password' => env('AGENTHUB_PASSWORD'),
+    ]
 ];
