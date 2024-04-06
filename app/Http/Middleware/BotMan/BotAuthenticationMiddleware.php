@@ -1,24 +1,31 @@
 <?php
+
 namespace App\Http\Middleware\BotMan;
 
 use App\Models\User;
 use App\Models\Bot;
+use App\Services\AgentHubApiService;
 use BotMan\BotMan\Messages\Incoming\IncomingMessage;
 use BotMan\BotMan\BotMan;
 use BotMan\BotMan\Interfaces\Middleware\Received;
 
 class BotAuthenticationMiddleware implements Received
 {
+    protected $agentHubApiService;
+
+    public function __construct(AgentHubApiService $agentHubApiService)
+    {
+        $this->agentHubApiService = $agentHubApiService;
+    }
+
     public function received(IncomingMessage $message, $next, BotMan $bot)
     {
-        $userId = $message->getSender(); // Получаем ID пользователя из сообщения
-        $userInput = $message->getText(); // Текст сообщения пользователя, возможно содержит код аутентификации
-        
-        // Предполагается, что у вас есть способ получения текущего бота (например, из $bot или другого источника)
+        $userId = $message->getSender();
+        $userInput = $message->getText();
+
         $currentBot = $this->getCurrentBot($bot);
-        
+
         if (!$currentBot) {
-            // Если бот не найден, прекращаем обработку
             $bot->reply("Извините, произошла ошибка. Попробуйте позже.");
             return;
         }
@@ -26,26 +33,47 @@ class BotAuthenticationMiddleware implements Received
         if ($this->requiresAuthentication($currentBot)) {
             if (!$this->checkAuthenticationCode($currentBot, $userInput)) {
                 $this->requestAuthentication($bot);
-                return; // Прекращаем обработку сообщения, если требуется аутентификация и код не подошел
+                return;
             }
         }
 
         $user = $this->findOrCreateUser($userId);
+
+        // Передаем данные пользователя и бота в контроллер через атрибуты сообщения
+        $message->addExtras('user', $user);
+        $message->addExtras('bot', $currentBot);
 
         return $next($message);
     }
 
     protected function findOrCreateUser($userId)
     {
+
         $user = User::where('messenger_id', $userId)->first();
 
+
         if (!$user) {
+
+            $userData = [
+                'username' => $userId,
+                'name' => 'default_name',
+                'surname' => 'default_surname',
+                'email' => $userId . '@example.com',
+                'is_admin' => false,
+                'avatar' => null,
+                'description' => null,
+                'is_operator' => false,
+                'password' => str_random(8),
+            ];
+
+            $agentHubUser = $this->agentHubApiService->registerUser($userData);
+
             $user = User::create([
                 'messenger_id' => $userId,
-                'name' => 'default_name',
-                // Другие поля пользователя
-                'email' => $userId . '@example.com',
-                'password' => bcrypt(str_random(8)), // Пример генерации пароля
+                'agent_hub_id' => $agentHubUser['id'],
+                'name' => $agentHubUser['name'],
+                'email' => $agentHubUser['email'],
+                'password' => bcrypt($userData['password']),
             ]);
         }
 
