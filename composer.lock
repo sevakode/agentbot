@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "be86804696069934ff89f7c4d113c307",
+    "content-hash": "7bb3da9fdabc8abd9b4f5f272c67e01e",
     "packages": [
         {
             "name": "botman/botman",
@@ -85,6 +85,67 @@
                 "source": "https://github.com/botman/botman/tree/v2.8.3"
             },
             "time": "2024-03-13T07:59:56+00:00"
+        },
+        {
+            "name": "botman/driver-telegram",
+            "version": "v2.0.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/botman/driver-telegram.git",
+                "reference": "b681bf94a8e1537c385a34131e8de8075c3866c8"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/botman/driver-telegram/zipball/b681bf94a8e1537c385a34131e8de8075c3866c8",
+                "reference": "b681bf94a8e1537c385a34131e8de8075c3866c8",
+                "shasum": ""
+            },
+            "require": {
+                "botman/botman": "^2.0",
+                "ext-curl": "*",
+                "php": ">=7.0"
+            },
+            "require-dev": {
+                "botman/studio-addons": "^1.0",
+                "illuminate/contracts": "^5.5",
+                "mockery/mockery": "^1.1",
+                "phpunit/phpunit": "^5.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "BotMan\\Drivers\\Telegram\\Providers\\TelegramServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "BotMan\\Drivers\\Telegram\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Marcel Pociot",
+                    "email": "m.pociot@gmail.com"
+                }
+            ],
+            "description": "Telegram driver for BotMan",
+            "homepage": "http://github.com/botman/driver-telegram",
+            "keywords": [
+                "Botman",
+                "bot",
+                "telegram"
+            ],
+            "support": {
+                "issues": "https://github.com/botman/driver-telegram/issues",
+                "source": "https://github.com/botman/driver-telegram/tree/v2.0.4"
+            },
+            "time": "2022-07-15T07:44:14+00:00"
         },
         {
             "name": "brick/math",
@@ -8510,5 +8571,5 @@
         "php": "^8.2"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.2.0"
 }

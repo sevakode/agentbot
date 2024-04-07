@@ -49,6 +49,16 @@ class AgentHubApiService
     {
         return $this->makeApiRequest('delete', "users/{$id}",);
     }
+
+    public function sendMessage(string $chatId, $content, $callbackUrl = null, $author = "user")
+    {
+        return $this->makeApiRequest('post', "chats/{$chatId}/message", [
+            'content' => $content,
+            'author' => $author,
+            'callback_url' => $callbackUrl,
+            'chat_id' => $chatId,
+        ]);
+    }
     
     public function authenticateAndCacheToken($username, $password)
     {

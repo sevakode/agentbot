@@ -3,7 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Conversations\CreateBotConversation;
+use App\Services\AgentHubApiService;
 use BotMan\BotMan\BotMan;
+use BotMan\BotMan\BotManFactory;
+use BotMan\BotMan\Drivers\DriverManager;
+use BotMan\Drivers\Telegram\TelegramDriver;
 use Illuminate\Http\Request;
 use App\Http\Conversations\ExampleConversation;
 use App\Http\Middleware\BotMan\BotAuthenticationMiddleware;
@@ -18,28 +22,40 @@ class BotManController extends Controller
             $bot->startConversation(new CreateBotConversation());
         });
         $botman->listen();
+
+        return true;
     }
 
-    public function handleDynamicBot($token)
+    public function handleDynamicBot($token, AgentHubApiService $service)
     {
-        $bot = Bot::where('token', $token)->first();
-    
-        if ($bot) {
-            $botman = app('botman');
-            $botman->middleware->received(new BotAuthenticationMiddleware($bot));
-    
-            $botConfig = [
-                'telegram' => [
-                    'token' => $token
-                ],
-                // Другие настройки бота
-            ];
-    
-            $botman = app('botman', [$botConfig]);
-            $botman->listen();
-        } else {
-            return response()->json(['error' => 'Invalid bot token'], 404);
-        }
+        $bot = Bot::where('token', $token)->firstOrFail();
+        $config = ['telegram' => compact('token')];
+
+        DriverManager::loadDriver(TelegramDriver::class);
+        $botman = BotManFactory::create($config);
+        $botman->hears('.*', function ($bot, $message) use($service, $botman, $token) {
+            $chatId = $botman->getUser()->getInfo()['chat_id'];
+            $callbackUrl = route('webhook.botman.answer', [
+                'token' => $token,
+                'chat_id' => $chatId,
+            ]);
+            $service->sendMessage($chatId, $message, $callbackUrl);
+        });
+        $botman->listen();
+
+        return true;
+    }
+
+    public function handleAnswerBot(Request $request, $token, $chatId)
+    {
+        $message = $request->content;
+        $bot = Bot::where('token', $token)->firstOrFail();
+        $config = ['telegram' => compact('token')];
+
+        $botman = BotManFactory::create($config);
+        $botman->say($message, $chatId, TelegramDriver::class);
+
+        return true;
     }
     
 }
