@@ -37,6 +37,7 @@ class BotManController extends Controller
         $botman->hears('{message}', function ($botman, $message) use($service, $bot, $token) {
             $messengerId = $botman->getUser()->getId();
             $username = $botman->getUser()->getUsername();
+            $botman->reply('hears');
             $user = User::query()->where('messenger_id', $messengerId)->first();
             $botman->reply('dasdasdad');
             if (is_null($user)) {
