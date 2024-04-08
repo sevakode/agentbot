@@ -35,11 +35,11 @@ class BotManController extends Controller
         $bot = Bot::where('token', $token)->firstOrFail();
         
         $botman->hears('{message}', function ($botman, $message) use($service, $bot, $token) {
-            $botman->reply('dasdasdad');
             $messengerId = $botman->getUser()->getId();
             $username = $botman->getUser()->getUsername();
             $user = User::query()->where('messenger_id', $messengerId)->first();
             if (is_null($user)) {
+                $botman->reply(json_encode(is_null($user)));
                 $password = 'test_password';
                 $responseUser = $service->createUser(
                     username: 'User' . str_replace(0, '', (string) $messengerId),
@@ -48,12 +48,15 @@ class BotManController extends Controller
                     surname: $botman->getUser()->getLastName() ?: '',
                     email: "$messengerId@bot.com",
                 );
+                $botman->reply($responseUser->json());
+
                 logs()->info(print_r($responseUser->json(), 1));
                 $responseChat = $service->createChat(
                     name: "Telegram - @$username",
                     groupId: $bot->group_id,
                     ownerId: $responseUser->json()['id'],
                 );
+                $botman->reply($responseUser->json());
                 logs()->info(print_r($responseChat->json(), 1));
                 $user = User::create([
                     'username' => $username,
@@ -74,6 +77,8 @@ class BotManController extends Controller
             $response = $service->sendMessage($user->chat_id, $message, $callbackUrl);
             logs()->info([$user->chat_id, $message, $callbackUrl]);
             logs()->info($response->json());
+            $botman->reply($response->json());
+
         });
         $botman->listen();
 
