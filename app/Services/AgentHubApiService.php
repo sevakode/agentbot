@@ -23,15 +23,14 @@ class AgentHubApiService
     public function createUser(
         string $username,
         string $password,
-        string $name,
-        string $surname,
-        string $email,
+        string $name = '',
+        string $surname = '',
+        string $email = '',
         bool $isAdmin = false,
         string|null $avatar = null,
         string|null $description = null,
         bool $isOperator = false,
-    )
-    {
+    ) {
         return $this->makeApiRequest('post', 'users/', [
             'username' => $username,
             'password' => $password,
@@ -43,6 +42,11 @@ class AgentHubApiService
             'description' => $description,
             'is_operator' => $isOperator,
         ]);
+    }
+
+    public function showUser(string $id)
+    {
+        return $this->makeApiRequest('get', "users/{$id}",);
     }
 
     public function deleteUser(string $id)
@@ -57,6 +61,56 @@ class AgentHubApiService
             'author' => $author,
             'callback_url' => $callbackUrl,
             'chat_id' => $chatId,
+        ]);
+    }
+
+    public function getGroups($page=1, $limit=10)
+    {
+        return $this->makeApiRequest('get', 'groups/', [
+            'page' => $page,
+            'per_page' => $limit
+        ]);
+    }
+
+    public function createGroup(
+        string $name, 
+        string $description, 
+        string $prompt = '', 
+        array $availableTags = [],
+        array $variables = []
+    ) {
+        return $this->makeApiRequest('post', 'groups/', [
+            'name' => $name,
+            'description' => $description,
+            'raw_prompt' => $prompt,
+            'available_tags' => $availableTags,
+            'variables' => $variables,
+        ]);
+    }
+
+    public function showGroup(string $id)
+    {
+        return $this->makeApiRequest('get', "groups/{$id}",);
+    }
+
+    public function deleteGroup(string $id)
+    {
+        return $this->makeApiRequest('delete', "groups/{$id}",);
+    }
+
+    public function createChat(
+        string $name, 
+        string|int $groupId,
+        string|int $ownerId,
+        bool $shareForAllUsers = false, 
+        bool $aiEnabled = true,
+    ) {
+        return $this->makeApiRequest('post', 'chats/', [
+            "name" => $name,
+            "share_for_all_users" => $shareForAllUsers,
+            "ai_enabled" => $aiEnabled,
+            "group_id" => $groupId,
+            "owner_id" => $ownerId
         ]);
     }
     

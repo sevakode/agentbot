@@ -13,15 +13,15 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('chat_id');
-            $table->string('name');
-            $table->string('messenger_id');
-            $table->string('driver');
+            $table->string('username')->index();
+            $table->string('chat_id')->index();
+            $table->string('driver')->index();
+            $table->string('messenger_id')->nullable();
             $table->unique(['messenger_id', 'driver']);
-            $table->string('access_token');
-            $table->string('email')->unique();
+            $table->string('access_token')->nullable();
+            $table->string('email')->unique()->nullable();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            $table->string('password')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
