@@ -35,31 +35,51 @@ class BotManController extends Controller
         $bot = Bot::where('token', $token)->firstOrFail();
         
         $botman->hears('{message}', function ($botman, $message) use($service, $bot, $token) {
-            $botman->reply('dasdasdad');
+            $botman->typesAndWaits(10);
+
             $messengerId = $botman->getUser()->getId();
             $username = $botman->getUser()->getUsername();
             $user = User::query()->where('messenger_id', $messengerId)->first();
+            logs()->info($messengerId);
+            logs()->info($user?->toArray());
+            $usernameService = 'User' . str_replace(0, '', (string) $messengerId);
+            $password = 'test_password';
+            $meService = new AgentHubApiService($usernameService, $password);
+
             if (is_null($user)) {
-                $password = 'test_password';
                 $responseUser = $service->createUser(
-                    username: 'User' . str_replace(0, '', (string) $messengerId),
+                    username: $usernameService,
                     password: $password,
                     name: $botman->getUser()->getFirstName(),
                     surname: $botman->getUser()->getLastName() ?: '',
                     email: "$messengerId@bot.com",
                 );
                 logs()->info(print_r($responseUser->json(), 1));
-                $responseChat = $service->createChat(
-                    name: "Telegram - @$username",
-                    groupId: $bot->group_id,
-                    ownerId: $responseUser->json()['id'],
-                );
-                logs()->info(print_r($responseChat->json(), 1));
+                logs()->info('--------------1----------------');
+                if ($responseUser->getStatusCode() !== 200) {
+                    $responseUser = $meService->meUser();
+
+                    logs()->info(print_r($responseUser->json(), 1));
+                    logs()->info('--------------2----------------');
+                }
+                $responseChat = $meService;
+                $responseChatDataId = $meService->meChats()->collect('data')?->first()?->get('id');
+                if ($responseUser->getStatusCode() !== 200 || is_null($responseChatDataId)) {
+                    $responseChat = $service->createChat(
+                        name: "Telegram - @$username",
+                        groupId: $bot->group_id,
+                        ownerId: $responseUser->json()['id'],
+                    );
+                    logs()->info(print_r($responseChat->json(), 1));
+                    $responseChatDataId = $responseChat->json()['id'];
+                }
+                logs()->info(print_r($responseChatDataId, 1));
+                logs()->info('--------------3----------------');
                 $user = User::create([
                     'username' => $username,
                     'password' => $password,
                     'driver' => 'telegram',
-                    'chat_id' => $responseChat->json()['id'],
+                    'chat_id' => $responseChatDataId,
                     'messenger_id' => $messengerId
                 ]);
             }
@@ -68,10 +88,8 @@ class BotManController extends Controller
                 'token' => $token,
                 'messenger_id' => $user->messenger_id,
             ]);
-            $username = 'User' . str_replace(0, '', (string) $user->messenger_id);
             $password = 'test_password';
-            $service = new AgentHubApiService($username, $password);
-            $response = $service->sendMessage($user->chat_id, $message, $callbackUrl);
+            $response = $meService->sendMessage($user->chat_id, $message, $callbackUrl);
             logs()->info([$user->chat_id, $message, $callbackUrl]);
             logs()->info($response->json());
         });
@@ -83,12 +101,17 @@ class BotManController extends Controller
     public function handleAnswerBot(Request $request, $token, $messengerId)
     {
         logs()->info($request->all());
-        $message = $request->content;
+        $message = $request->response;
+        logs()->info($message);
+        logs()->info($token);
         $bot = Bot::where('token', $token)->firstOrFail();
+        logs()->info($bot);
         $config = ['telegram' => compact('token')];
 
         $botman = BotManFactory::create($config);
-        $botman->say($message, $messengerId, TelegramDriver::class);
+        $botman->say($message, $messengerId, TelegramDriver::class, [
+            'parse_mode' => 'HTML'
+        ]);
 
         return true;
     }

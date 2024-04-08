@@ -54,13 +54,20 @@ class AgentHubApiService
         return $this->makeApiRequest('delete', "users/{$id}",);
     }
 
+    public function meUser()
+    {
+        return $this->makeApiRequest('get', "users/me/");
+    }
+
     public function sendMessage(string $chatId, $content, $callbackUrl = null, $author = "user")
     {
         return $this->makeApiRequest('post', "chats/{$chatId}/message", [
+            'id' => 1,
             'content' => $content,
             'author' => $author,
             'callback_url' => $callbackUrl,
             'chat_id' => $chatId,
+            'detected_tags' => [],
         ]);
     }
 
@@ -96,6 +103,20 @@ class AgentHubApiService
     public function deleteGroup(string $id)
     {
         return $this->makeApiRequest('delete', "groups/{$id}",);
+    }
+
+    public function getChats($page=1, $limit=10, $filter="")
+    {
+        return $this->makeApiRequest('get', "chats/", [
+            'filter' => $filter,
+            'page' => $page,
+            'per_page' => $limit,
+        ]);
+    }
+
+    public function meChats($page=1, $limit=10)
+    {
+        return $this->getChats($page, $limit, $filter="me");
     }
 
     public function createChat(
