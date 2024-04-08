@@ -38,8 +38,8 @@ class BotManController extends Controller
             $messengerId = $botman->getUser()->getId();
             $username = $botman->getUser()->getUsername();
             $user = User::query()->where('messenger_id', $messengerId)->first();
+            $botman->reply('dasdasdad');
             if (is_null($user)) {
-                $botman->reply(json_encode(is_null($user)));
                 $password = 'test_password';
                 $responseUser = $service->createUser(
                     username: 'User' . str_replace(0, '', (string) $messengerId),
