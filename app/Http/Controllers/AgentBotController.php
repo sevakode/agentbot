@@ -6,6 +6,7 @@ use BotMan\BotMan\BotManFactory;
 use BotMan\BotMan\Drivers\DriverManager;
 use BotMan\Drivers\Telegram\TelegramDriver;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 class AgentBotController extends Controller
@@ -15,59 +16,75 @@ class AgentBotController extends Controller
         DriverManager::loadDriver(TelegramDriver::class);
         $botman = BotManFactory::create(['telegram' => $token]);
 
-        // $agentConfig = config("agents.agent{$agent_id}");
         $agentConfig = [
             "urlStart" => "https://hooks.zapier.com/hooks/catch/9924015/e315a7ba13844659803548c962baf52e/",
             "urlReply" => "https://hooks.zapier.com/hooks/catch/9924015/703fb766fab94b668071fe757cc6a791/"
         ];
 
-        $botman->hears('/start', function ($botman) use ($agentConfig, $token) {
-            $this->handleStartCommand($botman, $agentConfig, $token);
+        $botman->hears('/start', function ($botman) use ($agentConfig) {
+            $this->handleStartCommand($botman, $agentConfig);
         });
 
         $botman->hears('', function ($botman) use ($agentConfig) {
             $message = $botman->getMessage();
-            $payload = $message->getPayload();
-        
-            if (isset($payload['reply_to_message']) && $payload['reply_to_message']['from']['id'] == $botman->getUser()->getId()) {
-                $this->handleReply($message, $agentConfig);
-            }
+            $this->handleMessage($message, $agentConfig);
         });
 
         $botman->listen();
     }
 
-    protected function handleStartCommand($botman, $agentConfig, $token)
+    protected function handleStartCommand($botman, $agentConfig)
     {
         $message = $botman->getMessage();
         $chatId = $message->getPayload()['chat']['id'];
+
+        // Получение последних 50 сообщений из кеша
+        $dialog = Cache::get("dialog_{$chatId}", []);
+
+        // Отправка диалога на URL для команды /start
+        $this->sendDialogToUrl($dialog, $agentConfig['urlStart']);
+
+        // Очистка кеша после отправки
+        Cache::forget("dialog_{$chatId}");
+    }
+
+    protected function handleMessage($message, $agentConfig)
+    {
+        $chatId = $message->getPayload()['chat']['id'];
+        $messageText = $message->getText();
         
-        $response = Http::get("https://api.telegram.org/bot{$token}/getUpdates", [
-            'chat_id' => $chatId,
-            'limit' => 20,
-        ]);
+        // Получение имени, фамилии и юзернейма пользователя
+        $firstName = $message->getUser()->getFirstName();
+        $lastName = $message->getUser()->getLastName() ?: '';
+        $username = $message->getUser()->getUsername();
         
-        if ($response->ok()) {
-            $updates = $response->json()['result'];
-            $messages = collect($updates)->pluck('message')->filter();
-            
-            $this->sendMessagesToUrl($messages, $agentConfig['urlStart']);
+        // Объединение имени, фамилии и юзернейма в одну строку
+        $userInfo = $firstName . ' ' . $lastName;
+        if ($username) {
+            $userInfo .= ' (@' . $username . ')';
+        }
+    
+        // Сохранение сообщения в кеш, если это не команда /start
+        if ($messageText !== '/start') {
+            $dialog = Cache::get("dialog_{$chatId}", []);
+            $dialog[] = ['role' => 'user', 'content' => $messageText, 'userInfo' => $userInfo];
+            $dialog = array_slice($dialog, -50); // Сохранение только последних 50 сообщений
+            Cache::put("dialog_{$chatId}", $dialog);
+        }
+    
+        // Проверка, является ли сообщение ответом пользователя (цитатой)
+        $payload = $message->getPayload();
+        if (isset($payload['reply_to_message']) && $payload['reply_to_message']['from']['id'] == $message->getBot()->getId()) {
+            // Отправка диалога на URL для реплики
+            $this->sendDialogToUrl($dialog, $agentConfig['urlReply']);
+    
+            // Очистка кеша после отправки ответа на реплику
+            Cache::forget("dialog_{$chatId}");
         }
     }
-    
 
-    protected function handleReply($message, $agentConfig)
+    protected function sendDialogToUrl($dialog, $url)
     {
-        $this->sendReplyToUrl($message, $agentConfig['urlReply']);
-    }
-
-    protected function sendMessagesToUrl($messages, $url)
-    {
-        Http::post($url, ['messages' => $messages->toArray()]);
-    }
-
-    protected function sendReplyToUrl($message, $url)
-    {
-        Http::post($url, ['reply' => $message->getText()]);
+        Http::post($url, ['dialog' => $dialog]);
     }
 }
