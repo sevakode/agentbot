@@ -54,21 +54,21 @@ class AgentBotController extends Controller
         $chatId = $message->getPayload()['chat']['id'];
         $messageText = $message->getText();
         
-        // Получение имени, фамилии и юзернейма пользователя
-        $firstName = $botman->getUser()->getFirstName();
-        $lastName = $botman->getUser()->getLastName() ?: '';
-        $username = $botman->getUser()->getUsername();
+        // // Получение имени, фамилии и юзернейма пользователя
+        // $firstName = $botman->getUser()->getFirstName();
+        // $lastName = $botman->getUser()->getLastName() ?: '';
+        // $username = $botman->getUser()->getUsername();
         
-        // Объединение имени, фамилии и юзернейма в одну строку
-        $userInfo = $firstName . ' ' . $lastName;
-        if ($username) {
-            $userInfo .= ' (@' . $username . ')';
-        }
+        // // Объединение имени, фамилии и юзернейма в одну строку
+        // $userInfo = $firstName . ' ' . $lastName;
+        // if ($username) {
+        //     $userInfo .= ' (@' . $username . ')';
+        // }
     
         // Сохранение сообщения в кеш, если это не команда /start
         if ($messageText !== '/start') {
             $dialog = Cache::get("dialog_{$chatId}", []);
-            $dialog[] = ['role' => 'user', 'content' => $messageText, 'userInfo' => $userInfo];
+            $dialog[] = ['role' => 'user', 'content' => $messageText, ];
             $dialog = array_slice($dialog, -50); // Сохранение только последних 50 сообщений
             Cache::put("dialog_{$chatId}", $dialog);
         }
