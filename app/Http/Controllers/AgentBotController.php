@@ -30,7 +30,9 @@ class AgentBotController extends Controller
 
         $botman->hears('', function ($botman) use ($agentConfig) {
             $message = $botman->getMessage();
-            if ($message->getPayload()['reply_to_message']['from']['id'] == $botman->getUser()->getId()) {
+            $payload = $message->getPayload();
+        
+            if (isset($payload['reply_to_message']) && $payload['reply_to_message']['from']['id'] == $botman->getUser()->getId()) {
                 $this->handleReply($message, $agentConfig);
             }
         });
