@@ -45,8 +45,6 @@ class AgentBotController extends Controller
         // Отправка диалога на URL
         $this->sendDialogToUrl($dialog, $agentConfig['url']);
 
-        // Очистка кеша после отправки
-        Cache::forget("dialog_{$chatId}");
     }
 
     protected function handleMessage($botman, $agentConfig)
