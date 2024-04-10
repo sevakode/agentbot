@@ -39,7 +39,8 @@ class AgentBotController extends Controller
 
     protected function handleStartCommand($botman, $agentConfig)
     {
-        $messages = $botman->getMessages()->slice(-20);
+        $messages = $botman->getMessages();
+        $messages = collect($messages)->slice(-20);
         $this->sendMessagesToUrl($messages, $agentConfig['urlStart']);
     }
 
