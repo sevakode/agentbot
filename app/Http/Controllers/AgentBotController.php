@@ -26,8 +26,8 @@ class AgentBotController extends Controller
         });
 
         $botman->hears('', function ($botman) use ($agentConfig) {
-            $message = $botman->getMessage();
-            $this->handleMessage($message, $agentConfig);
+            
+            $this->handleMessage($botman, $agentConfig);
         });
 
         $botman->listen();
@@ -48,15 +48,16 @@ class AgentBotController extends Controller
         Cache::forget("dialog_{$chatId}");
     }
 
-    protected function handleMessage($message, $agentConfig)
+    protected function handleMessage($botman, $agentConfig)
     {
+        $message = $botman->getMessage();
         $chatId = $message->getPayload()['chat']['id'];
         $messageText = $message->getText();
         
         // Получение имени, фамилии и юзернейма пользователя
-        $firstName = $message->getUser()->getFirstName();
-        $lastName = $message->getUser()->getLastName() ?: '';
-        $username = $message->getUser()->getUsername();
+        $firstName = $botman->getUser()->getFirstName();
+        $lastName = $botman->getUser()->getLastName() ?: '';
+        $username = $botman->getUser()->getUsername();
         
         // Объединение имени, фамилии и юзернейма в одну строку
         $userInfo = $firstName . ' ' . $lastName;
