@@ -18,6 +18,7 @@ class AgentBotController extends Controller
 
         $agentConfig = [
             "url" => "https://hooks.zapier.com/hooks/catch/9924015/e315a7ba13844659803548c962baf52e/",
+            "botname"=>"JiraTasker_bot"
         ];
 
         $botman->hears('/start', function ($botman) use ($agentConfig) {
@@ -75,7 +76,7 @@ class AgentBotController extends Controller
 
         // Проверка, является ли сообщение ответом пользователя (цитатой)
         $payload = $message->getPayload();
-        if (isset($payload['reply_to_message']) && $payload['reply_to_message']['from']['id'] == $botman->getBot()->getId()) {
+        if (isset($payload['reply_to_message']) && $payload['reply_to_message']['from']['username'] ==$agentConfig['botname']) {
             // Добавление идентификатора группы (чата) в диалог
             $dialog['chatId'] = $chatId;
 
