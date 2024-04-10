@@ -21,8 +21,8 @@ class AgentBotController extends Controller
             "urlReply" => "https://hooks.zapier.com/hooks/catch/9924015/703fb766fab94b668071fe757cc6a791/"
         ];
 
-        $botman->hears('/start', function ($botman) use ($agentConfig) {
-            $this->handleStartCommand($botman, $agentConfig);
+        $botman->hears('/start', function ($botman) use ($agentConfig, $token) {
+            $this->handleStartCommand($botman, $agentConfig, $token);
         });
 
         $botman->hears('', function ($botman) use ($agentConfig) {
@@ -37,12 +37,12 @@ class AgentBotController extends Controller
         $botman->listen();
     }
 
-    protected function handleStartCommand($botman, $agentConfig)
+    protected function handleStartCommand($botman, $agentConfig, $token)
     {
         $message = $botman->getMessage();
         $chatId = $message->getPayload()['chat']['id'];
         
-        $response = Http::get("https://api.telegram.org/bot{$botman->getToken()}/getUpdates", [
+        $response = Http::get("https://api.telegram.org/bot{$token}/getUpdates", [
             'chat_id' => $chatId,
             'limit' => 20,
         ]);
@@ -54,6 +54,7 @@ class AgentBotController extends Controller
             $this->sendMessagesToUrl($messages, $agentConfig['urlStart']);
         }
     }
+    
 
     protected function handleReply($message, $agentConfig)
     {
