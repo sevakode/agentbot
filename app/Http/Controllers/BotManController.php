@@ -33,9 +33,10 @@ class BotManController extends Controller
         /** @var BotMan */
         $botman = BotManFactory::create(['telegram' => compact('token')]);
         $bot = Bot::where('token', $token)->firstOrFail();
-        
         $botman->hears('{message}', function ($botman, $message) use($service, $bot, $token) {
             $botman->typesAndWaits(10);
+
+            $message = $botman->getMessage()?->getText() ?: $message;
 
             $messengerId = $botman->getUser()->getId();
             $username = $botman->getUser()->getUsername();
