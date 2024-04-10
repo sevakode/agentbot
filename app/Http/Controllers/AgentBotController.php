@@ -10,10 +10,12 @@ use Illuminate\Support\Facades\Http;
 
 class AgentBotController extends Controller
 {
-    public function handleAgentBot(Request $request, $token, $agent_id)
+    public function handleAgentBot(Request $request, $token, $agent)
     {
         DriverManager::loadDriver(TelegramDriver::class);
         $botman = BotManFactory::create(['telegram' => $token]);
+        $logMessage = json_encode($request->all(), JSON_PRETTY_PRINT);
+        $botman->reply("Logs of the incoming request:\n```\n$logMessage\n```");
 
         // $agentConfig = config("agents.agent{$agent_id}");
         $agentConfig = [
