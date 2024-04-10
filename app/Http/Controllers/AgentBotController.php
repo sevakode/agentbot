@@ -10,18 +10,19 @@ use Illuminate\Support\Facades\Http;
 
 class AgentBotController extends Controller
 {
-    public function handleAgentBot(Request $request, $token, $agent)
+    public function handleAgentBot(Request $request, $token)
     {
         DriverManager::loadDriver(TelegramDriver::class);
         $botman = BotManFactory::create(['telegram' => $token]);
-        $logMessage = json_encode($request->all(), JSON_PRETTY_PRINT);
-        $botman->reply("Logs of the incoming request:\n```\n$logMessage\n```");
 
         // $agentConfig = config("agents.agent{$agent_id}");
         $agentConfig = [
-            "urlStart"=>"https://hooks.zapier.com/hooks/catch/9924015/e315a7ba13844659803548c962baf52e/",
-            "urlReply"=>"https://hooks.zapier.com/hooks/catch/9924015/703fb766fab94b668071fe757cc6a791/"
+            "urlStart" => "https://hooks.zapier.com/hooks/catch/9924015/e315a7ba13844659803548c962baf52e/",
+            "urlReply" => "https://hooks.zapier.com/hooks/catch/9924015/703fb766fab94b668071fe757cc6a791/"
         ];
+
+        $logMessage = json_encode($request->all(), JSON_PRETTY_PRINT);
+        $botman->reply("Logs of the incoming request:\n```\n$logMessage\n```");
 
         $botman->hears('/start', function ($botman) use ($agentConfig) {
             $this->handleStartCommand($botman, $agentConfig);
@@ -30,7 +31,7 @@ class AgentBotController extends Controller
         $botman->hears('', function ($botman) use ($agentConfig) {
             $message = $botman->getMessage();
             if ($message->getPayload()['reply_to_message']['from']['id'] == $botman->getUser()->getId()) {
-                $this->handleReply($message->getText(), $agentConfig);
+                $this->handleReply($message, $agentConfig);
             }
         });
 
@@ -40,13 +41,15 @@ class AgentBotController extends Controller
     protected function handleStartCommand($botman, $agentConfig)
     {
         $messages = $botman->getMessages();
-        $messages = collect($messages)->slice(-20);
-        $this->sendMessagesToUrl($messages, $agentConfig['urlStart']);
+        if (is_array($messages)) {
+            $messages = collect($messages)->slice(-20);
+            $this->sendMessagesToUrl($messages, $agentConfig['urlStart']);
+        }
     }
 
-    protected function handleReply($replyText, $agentConfig)
+    protected function handleReply($message, $agentConfig)
     {
-        $this->sendReplyToUrl($replyText, $agentConfig['urlReply']);
+        $this->sendReplyToUrl($message, $agentConfig['urlReply']);
     }
 
     protected function sendMessagesToUrl($messages, $url)
@@ -54,8 +57,8 @@ class AgentBotController extends Controller
         Http::post($url, ['messages' => $messages->toArray()]);
     }
 
-    protected function sendReplyToUrl($replyText, $url)
+    protected function sendReplyToUrl($message, $url)
     {
-        Http::post($url, ['reply' => $replyText]);
+        Http::post($url, ['reply' => $message->getText()]);
     }
 }
