@@ -110,6 +110,6 @@ class AgentBotController extends Controller
 
     protected function sendDialogToUrl($dialog, $url)
     {
-        Http::post($url, ['dialog' => $dialog]);
+        Http::post($url, ['dialog' => $dialog])->json();
     }
 }
