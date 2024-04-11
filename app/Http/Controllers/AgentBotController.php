@@ -40,10 +40,8 @@ class AgentBotController extends Controller
         $message = $botman->getMessage();
         $chatId = $message->getPayload()['chat']['id'];
 
-        // Получение последних 50 сообщений из кеша
         $dialog = Cache::get("dialog_{$chatId}", []);
 
-        // Добавление идентификатора группы (чата) в диалог
         $dialog['chatId'] = $chatId;
 
         // Отправка диалога на URL
@@ -54,7 +52,14 @@ class AgentBotController extends Controller
     {
         $message = $botman->getMessage();
         $chatId = $message->getPayload()['chat']['id'];
-
+        // Получение диалога из кеша
+        $dialog = Cache::get("dialog_{$chatId}", []);
+        // Добавление идентификатора группы (чата) в диалог, если он еще не установлен
+        if (!isset($dialog['chatId'])) {
+            $dialog['chatId'] = $chatId;
+        }
+        // Отправка диалога на URL
+        $this->sendDialogToUrl($dialog, $agentConfig['url']);
         // Очистка кеша после получения команды /done
         Cache::forget("dialog_{$chatId}");
     }
@@ -63,14 +68,11 @@ class AgentBotController extends Controller
     {
         $message = $botman->getMessage();
         $payload = $message->getPayload();
-    
         if (!isset($payload['chat'])) {
             return;
         }
-    
         $chatId = $payload['chat']['id'];
         $messageText = $message->getText();
-        $messageId = $payload['message_id'];
 
         // Получение информации об отправителе сообщения из полезной нагрузки
         $sender = $message->getPayload()['from'];
@@ -86,33 +88,26 @@ class AgentBotController extends Controller
 
       
     
-        // Проверка наличия сообщения в кеше по идентификатору
-        if (Cache::has("message_{$messageId}")) {
-            return;
-        }
-    
-    
-        // Сохранение сообщения в кеш, если это не команда /start или /done
+        $dialog = Cache::get("dialog_{$chatId}", []);
         if ($messageText !== '/start' && $messageText !== '/done') {
-            $dialog = Cache::get("dialog_{$chatId}", []);
-            $dialog['messages'][] = ['role' => 'user', 'content' => $messageText, 'userInfo' => $userInfo];
-            $dialog['messages'] = array_slice($dialog['messages'], -50); // Сохранение только последних 50 сообщений
-            Cache::put("dialog_{$chatId}", $dialog);
-    
-            // Сохранение идентификатора сообщения в кеше
-            Cache::put("message_{$messageId}", true);
+            // Проверка, является ли сообщение уникальным
+            if (!in_array($messageText, array_column($dialog['messages'], 'content'))) {
+                $dialog['messages'][] = ['role' => 'user', 'content' => $messageText, 'userInfo' => $userInfo];
+                $dialog['messages'] = array_slice($dialog['messages'], -20);
+                Cache::put("dialog_{$chatId}", $dialog);
+            }
         }
-
-        // Проверка, является ли сообщение ответом пользователя (цитатой)
-        $payload = $message->getPayload();
         if (isset($payload['reply_to_message']) && $payload['reply_to_message']['from']['username'] == $agentConfig['botname']) {
-            // Добавление идентификатора группы (чата) в диалог
-            $dialog['chatId'] = $chatId;
-
+            // Добавление идентификатора группы (чата) в диалог, если он еще не установлен
+            if (!isset($dialog['chatId'])) {
+                $dialog['chatId'] = $chatId;
+            }
             // Отправка диалога на URL
             $this->sendDialogToUrl($dialog, $agentConfig['url']);
         }
     }
+
+    
 
     protected function sendDialogToUrl($dialog, $url)
     {
