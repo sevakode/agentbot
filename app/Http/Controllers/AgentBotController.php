@@ -64,6 +64,7 @@ class AgentBotController extends Controller
         $message = $botman->getMessage();
         $chatId = $message->getPayload()['chat']['id'];
         $messageText = $message->getText();
+        $messageId = $message->getPayload()['message_id'];
 
         // Получение информации об отправителе сообщения из полезной нагрузки
         $sender = $message->getPayload()['from'];
@@ -77,13 +78,23 @@ class AgentBotController extends Controller
             $userInfo .= ' (@' . $username . ')';
         }
 
+      
+    
+        // Проверка наличия сообщения в кеше по идентификатору
+        if (Cache::has("message_{$messageId}")) {
+            return;
+        }
+    
+    
         // Сохранение сообщения в кеш, если это не команда /start или /done
         if ($messageText !== '/start' && $messageText !== '/done') {
             $dialog = Cache::get("dialog_{$chatId}", []);
             $dialog['messages'][] = ['role' => 'user', 'content' => $messageText, 'userInfo' => $userInfo];
             $dialog['messages'] = array_slice($dialog['messages'], -50); // Сохранение только последних 50 сообщений
-
             Cache::put("dialog_{$chatId}", $dialog);
+    
+            // Сохранение идентификатора сообщения в кеше
+            Cache::put("message_{$messageId}", true);
         }
 
         // Проверка, является ли сообщение ответом пользователя (цитатой)
