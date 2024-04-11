@@ -62,9 +62,15 @@ class AgentBotController extends Controller
     protected function handleMessage($botman, $agentConfig)
     {
         $message = $botman->getMessage();
-        $chatId = $message->getPayload()['chat']['id'];
+        $payload = $message->getPayload();
+    
+        if (!isset($payload['chat'])) {
+            return;
+        }
+    
+        $chatId = $payload['chat']['id'];
         $messageText = $message->getText();
-        $messageId = $message->getPayload()['message_id'];
+        $messageId = $payload['message_id'];
 
         // Получение информации об отправителе сообщения из полезной нагрузки
         $sender = $message->getPayload()['from'];
