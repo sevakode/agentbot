@@ -29,7 +29,6 @@ class BotManController extends Controller
 
     public function handleDynamicBot(Request $request, $token, AgentHubApiService $service)
     {
-        dd($token);
         DriverManager::loadDriver(TelegramDriver::class);
         /** @var BotMan */
         $botman = BotManFactory::create(['telegram' => compact('token')]);
