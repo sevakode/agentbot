@@ -14,7 +14,7 @@ class AgentHubServiceProvider extends ServiceProvider
     public function register(): void
     {
         if ( ! defined('CURL_SSLVERSION_TLSv1_2')) { define('CURL_SSLVERSION_TLSv1_2', 6); }
-        URL::forceScheme('https');
+        // URL::forceScheme('https');
         $this->app->bind(AgentHubApiService::class, function ($app) {
             $log = config('services.agenthub.login');
             $pass = config('services.agenthub.password');
