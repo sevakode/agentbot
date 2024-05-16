@@ -64,7 +64,7 @@ class BotManController extends Controller
                     logs()->info('--------------2----------------');
                 }
                 $responseChat = $meService;
-                $responseChatDataId = $meService->meChats()->collect('data')?->first()?->get('id');
+                $responseChatDataId = $meService->meChats()->collect('data')?->first()['id'] ?? false;
                 if ($responseUser->getStatusCode() !== 200 || is_null($responseChatDataId)) {
                     $responseChat = $service->createChat(
                         name: "Telegram - @$username",
