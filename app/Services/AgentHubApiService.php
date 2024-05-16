@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Http;
 
 class AgentHubApiService
 {
-    protected $baseUrl = 'https://apiagenthubapi.ascender.space';
+    protected $baseUrl = env("URL_HUB");
 
     public function __construct(protected string $username, protected string $password)
     {}
