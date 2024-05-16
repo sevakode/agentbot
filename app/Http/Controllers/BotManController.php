@@ -85,10 +85,7 @@ class BotManController extends Controller
                 ]);
             }
 
-            $callbackUrl = route('webhook.botman.answer', [
-                'token' => $token,
-                'messenger_id' => $user->messenger_id,
-            ]);
+            $callbackUrl = env("LOCAL_URL")."/webhook/botman/answer?token=$token&messenger_id=$user->messenger_id";
             $password = 'test_password';
             $response = $meService->sendMessage($user->chat_id, $message, $callbackUrl);
             logs()->info([$user->chat_id, $message, $callbackUrl]);
