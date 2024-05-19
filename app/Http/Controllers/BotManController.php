@@ -37,8 +37,11 @@ class BotManController extends Controller
             $botman->typesAndWaits(10);
 
             $message = $botman->getMessage()?->getText() ?: $message;
-
-            $messengerId = $botman->getUser()->getId();
+            try {
+                $messengerId = $botman?->getUser()?->getId() ?? null;
+            } catch (\Exception $e) {
+                return;
+            }
             $username = $botman->getUser()->getUsername();
             $user = User::query()->where('messenger_id', $messengerId)->first();
             logs()->info($messengerId);
@@ -77,7 +80,7 @@ class BotManController extends Controller
                 logs()->info(print_r($responseChatDataId, 1));
                 logs()->info('--------------3----------------');
                 $user = User::create([
-                    'username' => $username,
+                    'username' => $username ?: $responseChatDataId,
                     'password' => $password,
                     'driver' => 'telegram',
                     'chat_id' => $responseChatDataId,
