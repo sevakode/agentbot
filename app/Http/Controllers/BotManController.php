@@ -67,7 +67,9 @@ class BotManController extends Controller
                     logs()->info('--------------2----------------');
                 }
                 $responseChat = $meService;
-                $responseChatDataId = $meService->meChats()->collect('data')?->first()['id'] ?? false;
+                $responseChatDataId = $meService->meChats()->collect('data')?->first()['id'] ?? null;
+                logs()->info('-----------------d----------------------');
+                logs()->info($responseChatDataId);
                 if ($responseUser->getStatusCode() !== 200 || is_null($responseChatDataId)) {
                     $responseChat = $service->createChat(
                         name: "Telegram - @$username",
@@ -94,6 +96,25 @@ class BotManController extends Controller
             ]);
             $password = 'test_password';
             $response = $meService->sendMessage($user->chat_id, $message, $callbackUrl);
+            if ($response->getStatusCode() !== 200) {
+                $responseUser = $meService->meUser();
+                $responseChatDataId = $meService->meChats()->collect('data')?->first()['id'] ?? null;
+                if (is_null($responseChatDataId)) {
+                    $botman->say('Ваша сессия чата была сброшена.', $messengerId, TelegramDriver::class, [
+                        'parse_mode' => 'HTML'
+                    ]);
+                    $responseChat = $service->createChat(
+                        name: "Telegram - @$username",
+                        groupId: $bot->group_id,
+                        ownerId: $responseUser->json()['id'],
+                    );
+                    $responseChatDataId = $responseChat->json()['id'];
+                    $user->update([
+                        'chat_id' => $responseChatDataId,
+                    ]);
+                    $response = $meService->sendMessage($responseChatDataId, $message, $callbackUrl);
+                }
+            }
             logs()->info([$user->chat_id, $message, $callbackUrl]);
             logs()->info($response->json());
         });
