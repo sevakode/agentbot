@@ -7,12 +7,12 @@ use Illuminate\Support\Facades\Http;
 
 class AgentHubApiService
 {
-    protected $baseUrl = env('AGENTHUB_URL', '127.0.0.1');
+    protected $baseUrl = '127.0.0.1';
 
     public function __construct(protected string $username, protected string $password)
     {
-        $this->baseUrl=env("URL_HUB");
-    }
+        $this->baseUrl=env("AGENTHUB_URL");
+    }    
 
     public function getUsers($page = 1, $limit = 10)
     {
