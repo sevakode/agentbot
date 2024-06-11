@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Http;
 
 class AgentHubApiService
 {
-    protected $baseUrl = "http://202.151.188.87:15011";
+    protected $baseUrl = env('AGENTHUB_URL', '127.0.0.1');
 
     public function __construct(protected string $username, protected string $password)
     {
