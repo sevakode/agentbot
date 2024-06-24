@@ -101,7 +101,7 @@ class BotManController extends Controller
                 $responseChatDataId = $meService->meChats()->collect('data')?->first()['id'] ?? null;
                 if (is_null($responseChatDataId)) {
                     $botman->say('Ваша сессия чата была сброшена.', $messengerId, TelegramDriver::class, [
-                        'parse_mode' => 'HTML'
+                        'parse_mode' => 'Markdown'
                     ]);
                     $responseChat = $service->createChat(
                         name: "Telegram - @$username",
@@ -135,7 +135,7 @@ class BotManController extends Controller
 
         $botman = BotManFactory::create($config);
         $botman->say($message, $messengerId, TelegramDriver::class, [
-            'parse_mode' => 'HTML'
+            'parse_mode' => 'Markdown'
         ]);
 
         return true;
